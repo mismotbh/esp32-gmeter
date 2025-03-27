@@ -4,6 +4,8 @@ from flask_sock import Sock
 app = Flask(__name__)
 sock = Sock(app)
 
+clients = set()
+
 HTML = """
 <!DOCTYPE html>
 <html>
@@ -62,29 +64,20 @@ def index():
 
 @sock.route("/ws")
 def websocket(ws):
-    while True:
-        data = ws.receive()
-        if data:
-            for client in app.clients:
-                try:
-                    client.send(data)
-                except:
-                    pass
-
-app.clients = []
-
-@sock.route("/ws")
-def sock_handler(ws):
-    app.clients.append(ws)
+    clients.add(ws)
     try:
         while True:
             data = ws.receive()
             if data:
-                for client in app.clients:
+                # Broadcast to all other clients
+                for client in list(clients):
                     if client != ws:
-                        client.send(data)
+                        try:
+                            client.send(data)
+                        except:
+                            clients.discard(client)
     except:
-        app.clients.remove(ws)
+        clients.discard(ws)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
