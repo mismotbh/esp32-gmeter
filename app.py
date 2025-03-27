@@ -41,12 +41,13 @@ HTML = """
     let xG = 0, yG = 0;
     let maxAccel = 0, maxBrake = 0, maxLateral = 0;
 
-    let lastAccelTime = 0;
-    let lastBrakeTime = 0;
-    let lastLateralTime = 0;
+    let candidateAccel = null, accelStart = 0;
+    let candidateBrake = null, brakeStart = 0;
+    let candidateLat = null, latStart = 0;
+
     const threshold = 0.3;
     const sustainTime = 250; // ms
-    const rangeTol = 0.2;
+    const matchRange = 0.1;
 
     const ws = new WebSocket("wss://" + location.host + "/ws");
 
@@ -60,31 +61,45 @@ HTML = """
 
       const now = Date.now();
 
-      // Acceleration Max
-      if (xG > threshold && Math.abs(xG - maxAccel) < rangeTol) {
-        if (now - lastAccelTime > sustainTime) {
+      // --- Acceleration Max ---
+      if (xG > threshold) {
+        if (candidateAccel === null || Math.abs(xG - candidateAccel) > matchRange) {
+          candidateAccel = xG;
+          accelStart = now;
+        } else if (now - accelStart >= sustainTime && xG > maxAccel) {
           maxAccel = xG;
+          candidateAccel = null;
         }
       } else {
-        lastAccelTime = now;
+        candidateAccel = null;
       }
 
-      // Braking Max
-      if (xG < -threshold && Math.abs(Math.abs(xG) - maxBrake) < rangeTol) {
-        if (now - lastBrakeTime > sustainTime) {
-          maxBrake = Math.abs(xG);
+      // --- Braking Max ---
+      if (xG < -threshold) {
+        const brakeG = Math.abs(xG);
+        if (candidateBrake === null || Math.abs(brakeG - candidateBrake) > matchRange) {
+          candidateBrake = brakeG;
+          brakeStart = now;
+        } else if (now - brakeStart >= sustainTime && brakeG > maxBrake) {
+          maxBrake = brakeG;
+          candidateBrake = null;
         }
       } else {
-        lastBrakeTime = now;
+        candidateBrake = null;
       }
 
-      // Lateral Max
-      if (Math.abs(yG) > threshold && Math.abs(Math.abs(yG) - maxLateral) < rangeTol) {
-        if (now - lastLateralTime > sustainTime) {
-          maxLateral = Math.abs(yG);
+      // --- Lateral Max ---
+      const latG = Math.abs(yG);
+      if (latG > threshold) {
+        if (candidateLat === null || Math.abs(latG - candidateLat) > matchRange) {
+          candidateLat = latG;
+          latStart = now;
+        } else if (now - latStart >= sustainTime && latG > maxLateral) {
+          maxLateral = latG;
+          candidateLat = null;
         }
       } else {
-        lastLateralTime = now;
+        candidateLat = null;
       }
 
       document.getElementById("accelMax").textContent = maxAccel.toFixed(2);
