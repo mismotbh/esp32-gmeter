@@ -1,10 +1,14 @@
 from flask import Flask, request, Response
 from flask_socketio import SocketIO
+import eventlet
+import eventlet.wsgi
+
+eventlet.monkey_patch()
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-@app.route('/')
+@app.route("/")
 def index():
     return Response("""
     <!DOCTYPE html>
@@ -26,25 +30,29 @@ def index():
       const centerY = 300;
       const radius = 20;
       const sensitivity = 100;
+
       let xG = 0, yG = 0;
+      let xBall = centerX, yBall = centerY;
 
       const socket = io();
+      console.log("Listening for socket...");
       socket.on("g_data", data => {
         xG = data.xG;
         yG = data.yG;
+        console.log("Received:", xG, yG);
       });
 
       function draw() {
         ctx.clearRect(0, 0, 600, 600);
-        const x = centerX + yG * sensitivity;
-        const y = centerY - xG * sensitivity;
+        xBall = xBall * 0.85 + (centerX + yG * sensitivity) * 0.15;
+        yBall = yBall * 0.85 + (centerY - xG * sensitivity) * 0.15;
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, 200, 0, 2 * Math.PI);
         ctx.strokeStyle = "#999"; ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.arc(xBall, yBall, radius, 0, 2 * Math.PI);
         ctx.fillStyle = (xG > 0.1) ? "red" : "lime";
         ctx.fill();
 
@@ -59,11 +67,12 @@ def index():
     </html>
     """, mimetype='text/html')
 
-@app.route('/update', methods=['POST'])
+@app.route("/update", methods=["POST"])
 def update():
     data = request.json
+    print("Emitted:", data)
     socketio.emit("g_data", data)
     return "OK"
 
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", port=5000)
