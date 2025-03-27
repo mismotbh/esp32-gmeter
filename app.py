@@ -1,9 +1,8 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string
 from flask_sock import Sock
 
 app = Flask(__name__)
 sock = Sock(app)
-latest_data = {"xG": 0, "yG": 0}
 clients = set()
 
 HTML = """
@@ -15,10 +14,16 @@ HTML = """
     body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; }
     canvas { background: #222; display: block; margin: 20px auto; }
     .stats { margin-top: 20px; font-size: 1.2em; }
+    .live { font-size: 1.4em; margin-top: 15px; color: #0f0; }
   </style>
 </head>
 <body>
   <canvas id="gBall" width="600" height="600"></canvas>
+
+  <div class="live">
+    xG: <span id="xG">0.00</span> | yG: <span id="yG">0.00</span>
+  </div>
+
   <div class="stats">
     <p>Accel Max: <span id="accelMax">0.00</span> G</p>
     <p>Brake Max: <span id="brakeMax">0.00</span> G</p>
@@ -32,8 +37,16 @@ HTML = """
     const centerY = canvas.height / 2;
     const radius = 20;
     const sensitivity = 100;
+
     let xG = 0, yG = 0;
     let maxAccel = 0, maxBrake = 0, maxLateral = 0;
+
+    let lastAccelTime = 0;
+    let lastBrakeTime = 0;
+    let lastLateralTime = 0;
+    const threshold = 0.3;
+    const sustainTime = 250; // ms
+    const rangeTol = 0.2;
 
     const ws = new WebSocket("wss://" + location.host + "/ws");
 
@@ -42,9 +55,37 @@ HTML = """
       xG = data.xG;
       yG = data.yG;
 
-      if (xG > 0 && xG > maxAccel) maxAccel = xG;
-      if (xG < 0 && Math.abs(xG) > maxBrake) maxBrake = Math.abs(xG);
-      if (Math.abs(yG) > maxLateral) maxLateral = Math.abs(yG);
+      document.getElementById("xG").textContent = xG.toFixed(2);
+      document.getElementById("yG").textContent = yG.toFixed(2);
+
+      const now = Date.now();
+
+      // Acceleration Max
+      if (xG > threshold && Math.abs(xG - maxAccel) < rangeTol) {
+        if (now - lastAccelTime > sustainTime) {
+          maxAccel = xG;
+        }
+      } else {
+        lastAccelTime = now;
+      }
+
+      // Braking Max
+      if (xG < -threshold && Math.abs(Math.abs(xG) - maxBrake) < rangeTol) {
+        if (now - lastBrakeTime > sustainTime) {
+          maxBrake = Math.abs(xG);
+        }
+      } else {
+        lastBrakeTime = now;
+      }
+
+      // Lateral Max
+      if (Math.abs(yG) > threshold && Math.abs(Math.abs(yG) - maxLateral) < rangeTol) {
+        if (now - lastLateralTime > sustainTime) {
+          maxLateral = Math.abs(yG);
+        }
+      } else {
+        lastLateralTime = now;
+      }
 
       document.getElementById("accelMax").textContent = maxAccel.toFixed(2);
       document.getElementById("brakeMax").textContent = maxBrake.toFixed(2);
@@ -86,7 +127,6 @@ def websocket(ws):
         while True:
             data = ws.receive()
             if data:
-                latest_data.update(eval(data))
                 for client in list(clients):
                     if client != ws:
                         try:
