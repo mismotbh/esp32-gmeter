@@ -34,8 +34,12 @@ def index():
       let xG = 0, yG = 0;
       let xBall = centerX, yBall = centerY;
 
-      const socket = io();
-      console.log("Listening for socket...");
+      const socket = io({ transports: ["websocket"] });  // ✅ Force WebSocket only
+
+      socket.on("connect", () => {
+        console.log("✅ WebSocket connected!");
+      });
+
       socket.on("g_data", data => {
         xG = data.xG;
         yG = data.yG;
@@ -61,6 +65,7 @@ def index():
         ctx.fillText(`Lateral: ${yG.toFixed(2)}g`, 20, 50);
         requestAnimationFrame(draw);
       }
+
       draw();
     </script>
     </body>
