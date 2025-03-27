@@ -1,4 +1,0 @@
-flask
-flask-sock
-gunicorn
-gevent-websocket
