@@ -187,8 +187,8 @@ HTML = """
         const angle = (i / tickCount) * 2 * Math.PI;
         const xStart = Math.cos(angle) * (outerR - 10);
         const yStart = Math.sin(angle) * (outerR - 10);
-        const xEnd = Math.cos(angle) * (outerR);
-        const yEnd = Math.sin(angle) * (outerR);
+        const xEnd = Math.cos(angle) * outerR;
+        const yEnd = Math.sin(angle) * outerR;
         ctx.beginPath();
         ctx.moveTo(xStart, yStart);
         ctx.lineTo(xEnd, yEnd);
@@ -203,7 +203,7 @@ HTML = """
       const xBall = centerX + yG * sensitivity;
       const yBall = centerY - xG * sensitivity;
 
-      // Outer bezel
+      // Outer circle
       ctx.beginPath();
       ctx.arc(centerX, centerY, 200, 0, 2 * Math.PI);
       ctx.strokeStyle = "#FFD700";
@@ -212,7 +212,19 @@ HTML = """
 
       drawGaugeTicks(ctx, centerX, centerY, 200, 36);
 
-      // G-Ball gradient (metallic feel)
+      // Crosshair
+      ctx.strokeStyle = "#FFD70044";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 200, centerY);
+      ctx.lineTo(centerX + 200, centerY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - 200);
+      ctx.lineTo(centerX, centerY + 200);
+      ctx.stroke();
+
+      // G-ball
       const gradient = ctx.createRadialGradient(xBall - 5, yBall - 5, 5, xBall, yBall, radius);
       gradient.addColorStop(0, "#fff");
       gradient.addColorStop(0.4, (xG > 0.15) ? "#ff3333" : "#66ff66");
