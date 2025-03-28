@@ -9,58 +9,79 @@ HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Night Owl Racing G-Meter</title>
+  <title>Night Owl Racing - G Meter</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
 
     body {
       margin: 0;
-      background: #000;
+      background-color: #0a0a0a;
       color: #FFD700;
       font-family: 'Orbitron', sans-serif;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .branding {
       position: absolute;
-      top: 10px;
-      left: 20px;
-      font-size: 24px;
+      top: 20px;
+      left: 30px;
+      font-size: 28px;
       color: #FFD700;
-      text-shadow: 0 0 5px #FFD700;
+      text-shadow: 0 0 10px #FFD700;
+      letter-spacing: 2px;
     }
 
     canvas {
-      background: #111;
-      display: block;
-      margin: 60px auto 20px auto;
-      border: 2px solid #FFD700;
-    }
-
-    .stats {
-      margin-top: 20px;
-      font-size: 1.2em;
+      margin-top: 100px;
+      background: radial-gradient(circle, #111 60%, #000);
+      border: 3px solid #FFD700;
+      border-radius: 10px;
+      box-shadow: 0 0 25px #FFD70044;
     }
 
     .live {
-      font-size: 1.4em;
-      margin-top: 15px;
+      font-size: 1.6em;
       color: #FFD700;
+      margin: 30px 0 10px 0;
+    }
+
+    .dashboard {
+      background: #111;
+      border: 2px solid #FFD700;
+      border-radius: 8px;
+      padding: 20px 30px;
+      margin-bottom: 50px;
+      width: 300px;
+      box-shadow: 0 0 15px #FFD70033;
+    }
+
+    .dashboard p {
+      margin: 10px 0;
+      font-size: 1.2em;
+      color: #ffeb7a;
+    }
+
+    .highlight {
+      color: #fff689;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="branding">🏁 Night Owl Racing</div>
+
   <canvas id="gBall" width="600" height="600"></canvas>
 
   <div class="live">
     xG: <span id="xG">0.00</span> | yG: <span id="yG">0.00</span>
   </div>
 
-  <div class="stats">
-    <p>Brake Max: <span id="brakeMax">0.00</span> G</p>
-    <p>Accel Max: <span id="accelMax">0.00</span> G</p>
-    <p>Lateral Max: <span id="lateralMax">0.00</span> G</p>
+  <div class="dashboard">
+    <p>Brake Max: <span class="highlight" id="brakeMax">0.00</span> G</p>
+    <p>Accel Max: <span class="highlight" id="accelMax">0.00</span> G</p>
+    <p>Lateral Max: <span class="highlight" id="lateralMax">0.00</span> G</p>
   </div>
 
   <script>
@@ -153,7 +174,7 @@ HTML = """
 
       ctx.beginPath();
       ctx.arc(xBall, yBall, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";  // red = braking
+      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";  // Red = braking
       ctx.fill();
 
       requestAnimationFrame(draw);
