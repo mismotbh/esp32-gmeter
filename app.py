@@ -15,12 +15,13 @@ HTML = """
 
     body {
       margin: 0;
-      background-color: #0a0a0a;
+      background-color: #000;
       color: #FFD700;
       font-family: 'Orbitron', sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
 
     .branding {
@@ -31,34 +32,37 @@ HTML = """
       color: #FFD700;
       text-shadow: 0 0 10px #FFD700;
       letter-spacing: 2px;
+      z-index: 100;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      gap: 60px;
+      flex-wrap: wrap;
     }
 
     canvas {
-      margin-top: 100px;
-      background: radial-gradient(circle, #111 60%, #000);
+      background: radial-gradient(circle at center, #111 60%, #000);
       border: 3px solid #FFD700;
-      border-radius: 10px;
-      box-shadow: 0 0 25px #FFD70044;
-    }
-
-    .live {
-      font-size: 1.6em;
-      color: #FFD700;
-      margin: 30px 0 10px 0;
+      border-radius: 20px;
+      box-shadow: 0 0 30px #FFD70033;
     }
 
     .dashboard {
       background: #111;
       border: 2px solid #FFD700;
-      border-radius: 8px;
-      padding: 20px 30px;
-      margin-bottom: 50px;
-      width: 300px;
-      box-shadow: 0 0 15px #FFD70033;
+      border-radius: 12px;
+      padding: 25px 35px;
+      min-width: 250px;
+      box-shadow: 0 0 20px #FFD70022;
     }
 
     .dashboard p {
-      margin: 10px 0;
+      margin: 14px 0;
       font-size: 1.2em;
       color: #ffeb7a;
     }
@@ -67,21 +71,37 @@ HTML = """
       color: #fff689;
       font-weight: bold;
     }
+
+    .live {
+      font-size: 1.5em;
+      color: #FFD700;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        padding: 20px;
+        gap: 30px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="branding">🏁 Night Owl Racing</div>
 
-  <canvas id="gBall" width="600" height="600"></canvas>
+  <div class="container">
+    <canvas id="gBall" width="500" height="500"></canvas>
 
-  <div class="live">
-    xG: <span id="xG">0.00</span> | yG: <span id="yG">0.00</span>
-  </div>
-
-  <div class="dashboard">
-    <p>Brake Max: <span class="highlight" id="brakeMax">0.00</span> G</p>
-    <p>Accel Max: <span class="highlight" id="accelMax">0.00</span> G</p>
-    <p>Lateral Max: <span class="highlight" id="lateralMax">0.00</span> G</p>
+    <div class="dashboard">
+      <div class="live">
+        xG: <span id="xG">0.00</span> | yG: <span id="yG">0.00</span>
+      </div>
+      <p>Brake Max: <span class="highlight" id="brakeMax">0.00</span> G</p>
+      <p>Accel Max: <span class="highlight" id="accelMax">0.00</span> G</p>
+      <p>Lateral Max: <span class="highlight" id="lateralMax">0.00</span> G</p>
+    </div>
   </div>
 
   <script>
@@ -115,7 +135,6 @@ HTML = """
 
       const now = Date.now();
 
-      // Braking (xG > 0)
       if (xG > threshold) {
         if (candidateBrake === null || Math.abs(xG - candidateBrake) > matchRange) {
           candidateBrake = xG;
@@ -128,7 +147,6 @@ HTML = """
         candidateBrake = null;
       }
 
-      // Acceleration (xG < 0)
       if (xG < -threshold) {
         const accelG = Math.abs(xG);
         if (candidateAccel === null || Math.abs(accelG - candidateAccel) > matchRange) {
@@ -142,7 +160,6 @@ HTML = """
         candidateAccel = null;
       }
 
-      // Lateral
       const latG = Math.abs(yG);
       if (latG > threshold) {
         if (candidateLat === null || Math.abs(latG - candidateLat) > matchRange) {
@@ -161,24 +178,54 @@ HTML = """
       document.getElementById("lateralMax").textContent = maxLateral.toFixed(2);
     };
 
+    function drawGaugeTicks(ctx, centerX, centerY, outerR, tickCount = 36) {
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.strokeStyle = "#FFD70044";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < tickCount; i++) {
+        const angle = (i / tickCount) * 2 * Math.PI;
+        const xStart = Math.cos(angle) * (outerR - 10);
+        const yStart = Math.sin(angle) * (outerR - 10);
+        const xEnd = Math.cos(angle) * (outerR);
+        const yEnd = Math.sin(angle) * (outerR);
+        ctx.beginPath();
+        ctx.moveTo(xStart, yStart);
+        ctx.lineTo(xEnd, yEnd);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const xBall = centerX + yG * sensitivity;
       const yBall = centerY - xG * sensitivity;
 
+      // Outer bezel
       ctx.beginPath();
       ctx.arc(centerX, centerY, 200, 0, 2 * Math.PI);
       ctx.strokeStyle = "#FFD700";
+      ctx.lineWidth = 4;
       ctx.stroke();
+
+      drawGaugeTicks(ctx, centerX, centerY, 200, 36);
+
+      // G-Ball gradient (metallic feel)
+      const gradient = ctx.createRadialGradient(xBall - 5, yBall - 5, 5, xBall, yBall, radius);
+      gradient.addColorStop(0, "#fff");
+      gradient.addColorStop(0.4, (xG > 0.15) ? "#ff3333" : "#66ff66");
+      gradient.addColorStop(1, "#111");
 
       ctx.beginPath();
       ctx.arc(xBall, yBall, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";  // Red = braking
+      ctx.fillStyle = gradient;
       ctx.fill();
 
       requestAnimationFrame(draw);
     }
+
     draw();
   </script>
 </body>
