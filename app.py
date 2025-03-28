@@ -25,8 +25,8 @@ HTML = """
   </div>
 
   <div class="stats">
-    <p>Accel Max: <span id="accelMax">0.00</span> G</p>
     <p>Brake Max: <span id="brakeMax">0.00</span> G</p>
+    <p>Accel Max: <span id="accelMax">0.00</span> G</p>
     <p>Lateral Max: <span id="lateralMax">0.00</span> G</p>
   </div>
 
@@ -61,34 +61,34 @@ HTML = """
 
       const now = Date.now();
 
-      // --- Acceleration Max ---
+      // --- Braking Max (xG > 0)
       if (xG > threshold) {
-        if (candidateAccel === null || Math.abs(xG - candidateAccel) > matchRange) {
-          candidateAccel = xG;
-          accelStart = now;
-        } else if (now - accelStart >= sustainTime && xG > maxAccel) {
-          maxAccel = xG;
-          candidateAccel = null;
-        }
-      } else {
-        candidateAccel = null;
-      }
-
-      // --- Braking Max ---
-      if (xG < -threshold) {
-        const brakeG = Math.abs(xG);
-        if (candidateBrake === null || Math.abs(brakeG - candidateBrake) > matchRange) {
-          candidateBrake = brakeG;
+        if (candidateBrake === null || Math.abs(xG - candidateBrake) > matchRange) {
+          candidateBrake = xG;
           brakeStart = now;
-        } else if (now - brakeStart >= sustainTime && brakeG > maxBrake) {
-          maxBrake = brakeG;
+        } else if (now - brakeStart >= sustainTime && xG > maxBrake) {
+          maxBrake = xG;
           candidateBrake = null;
         }
       } else {
         candidateBrake = null;
       }
 
-      // --- Lateral Max ---
+      // --- Acceleration Max (xG < 0)
+      if (xG < -threshold) {
+        const accelG = Math.abs(xG);
+        if (candidateAccel === null || Math.abs(accelG - candidateAccel) > matchRange) {
+          candidateAccel = accelG;
+          accelStart = now;
+        } else if (now - accelStart >= sustainTime && accelG > maxAccel) {
+          maxAccel = accelG;
+          candidateAccel = null;
+        }
+      } else {
+        candidateAccel = null;
+      }
+
+      // --- Lateral Max (|yG|)
       const latG = Math.abs(yG);
       if (latG > threshold) {
         if (candidateLat === null || Math.abs(latG - candidateLat) > matchRange) {
@@ -102,8 +102,8 @@ HTML = """
         candidateLat = null;
       }
 
-      document.getElementById("accelMax").textContent = maxAccel.toFixed(2);
       document.getElementById("brakeMax").textContent = maxBrake.toFixed(2);
+      document.getElementById("accelMax").textContent = maxAccel.toFixed(2);
       document.getElementById("lateralMax").textContent = maxLateral.toFixed(2);
     };
 
@@ -120,7 +120,7 @@ HTML = """
 
       ctx.beginPath();
       ctx.arc(xBall, yBall, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = (xG < -0.15) ? "red" : "lime";
+      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";  // Red when braking (positive xG)
       ctx.fill();
 
       requestAnimationFrame(draw);
