@@ -10,8 +10,11 @@ HTML = """
 <html>
 <head>
   <title>Night Owl Racing - G Meter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -20,32 +23,34 @@ HTML = """
       font-family: 'Orbitron', sans-serif;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
       height: 100vh;
       overflow: hidden;
     }
 
     .branding {
-      position: absolute;
-      top: 20px;
-      left: 30px;
-      font-size: 28px;
+      margin-top: 10px;
+      font-size: 4vw;
       color: #FFD700;
       text-shadow: 0 0 10px #FFD700;
       letter-spacing: 2px;
-      z-index: 100;
     }
 
     .container {
       display: flex;
-      flex: 1;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px;
-      gap: 60px;
-      flex-wrap: wrap;
+      flex: 1;
+      width: 100%;
     }
 
     canvas {
+      width: 80vw;
+      height: 80vw;
+      max-width: 500px;
+      max-height: 500px;
       background: radial-gradient(circle at center, #111 60%, #000);
       border: 3px solid #FFD700;
       border-radius: 20px;
@@ -53,17 +58,20 @@ HTML = """
     }
 
     .dashboard {
+      margin-top: 20px;
       background: #111;
       border: 2px solid #FFD700;
       border-radius: 12px;
-      padding: 25px 35px;
-      min-width: 260px;
+      padding: 15px 25px;
+      text-align: center;
       box-shadow: 0 0 20px #FFD70022;
+      width: 90vw;
+      max-width: 360px;
     }
 
     .dashboard p {
-      margin: 14px 0;
-      font-size: 1.2em;
+      margin: 10px 0;
+      font-size: 4vw;
       color: #ffeb7a;
     }
 
@@ -77,18 +85,10 @@ HTML = """
     }
 
     .live {
-      font-size: 1.5em;
+      font-size: 4.5vw;
       color: #FFD700;
       margin-top: 10px;
       text-align: center;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-        padding: 20px;
-        gap: 30px;
-      }
     }
   </style>
 </head>
@@ -96,7 +96,7 @@ HTML = """
   <div class="branding">🏁 Night Owl Racing</div>
 
   <div class="container">
-    <canvas id="gBall" width="500" height="500"></canvas>
+    <canvas id="gBall"></canvas>
 
     <div class="dashboard">
       <div class="live">
@@ -111,10 +111,13 @@ HTML = """
   <script>
     const canvas = document.getElementById("gBall");
     const ctx = canvas.getContext("2d");
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = 20;
-    const sensitivity = 100;
+
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
     let xG = 0, yG = 0;
     let maxAccel = 0, maxBrake = 0, maxLateral = 0;
@@ -182,54 +185,41 @@ HTML = """
       document.getElementById("lateralMax").textContent = maxLateral.toFixed(2);
     };
 
-    function drawGaugeTicks(ctx, centerX, centerY, outerR, tickCount = 36) {
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.strokeStyle = "#FFD70044";
-      ctx.lineWidth = 1;
-      for (let i = 0; i < tickCount; i++) {
-        const angle = (i / tickCount) * 2 * Math.PI;
-        const xStart = Math.cos(angle) * (outerR - 10);
-        const yStart = Math.sin(angle) * (outerR - 10);
-        const xEnd = Math.cos(angle) * outerR;
-        const yEnd = Math.sin(angle) * outerR;
-        ctx.beginPath();
-        ctx.moveTo(xStart, yStart);
-        ctx.lineTo(xEnd, yEnd);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = width * 0.04;
+      const outerR = width * 0.4;
+      const sensitivity = outerR / 2;
+
+      ctx.clearRect(0, 0, width, height);
 
       const xBall = centerX + yG * sensitivity;
       const yBall = centerY - xG * sensitivity;
 
       // Outer circle
       ctx.beginPath();
-      ctx.arc(centerX, centerY, 200, 0, 2 * Math.PI);
+      ctx.arc(centerX, centerY, outerR, 0, 2 * Math.PI);
       ctx.strokeStyle = "#FFD700";
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       ctx.stroke();
-
-      drawGaugeTicks(ctx, centerX, centerY, 200, 36);
 
       // Crosshair
       ctx.strokeStyle = "#FFD70044";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(centerX - 200, centerY);
-      ctx.lineTo(centerX + 200, centerY);
+      ctx.moveTo(centerX - outerR, centerY);
+      ctx.lineTo(centerX + outerR, centerY);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY - 200);
-      ctx.lineTo(centerX, centerY + 200);
+      ctx.moveTo(centerX, centerY - outerR);
+      ctx.lineTo(centerX, centerY + outerR);
       ctx.stroke();
 
-      // G-ball
-      const gradient = ctx.createRadialGradient(xBall - 5, yBall - 5, 5, xBall, yBall, radius);
+      // Ball gradient
+      const gradient = ctx.createRadialGradient(xBall, yBall, 5, xBall, yBall, radius);
       gradient.addColorStop(0, "#fff");
       gradient.addColorStop(0.4, (xG > 0.15) ? "#ff3333" : "#66ff66");
       gradient.addColorStop(1, "#111");
