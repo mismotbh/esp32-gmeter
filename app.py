@@ -57,7 +57,7 @@ HTML = """
       border: 2px solid #FFD700;
       border-radius: 12px;
       padding: 25px 35px;
-      min-width: 250px;
+      min-width: 260px;
       box-shadow: 0 0 20px #FFD70022;
     }
 
@@ -67,9 +67,13 @@ HTML = """
       color: #ffeb7a;
     }
 
-    .highlight {
+    .highlight, #xG, #yG {
       color: #fff689;
       font-weight: bold;
+      display: inline-block;
+      min-width: 3.6em;
+      font-family: 'Courier New', monospace;
+      text-align: right;
     }
 
     .live {
