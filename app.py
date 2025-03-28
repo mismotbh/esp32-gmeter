@@ -9,15 +9,48 @@ HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Live G-Meter</title>
+  <title>Night Owl Racing G-Meter</title>
   <style>
-    body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; }
-    canvas { background: #222; display: block; margin: 20px auto; }
-    .stats { margin-top: 20px; font-size: 1.2em; }
-    .live { font-size: 1.4em; margin-top: 15px; color: #0f0; }
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+
+    body {
+      margin: 0;
+      background: #000;
+      color: #FFD700;
+      font-family: 'Orbitron', sans-serif;
+      text-align: center;
+    }
+
+    .branding {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 24px;
+      color: #FFD700;
+      text-shadow: 0 0 5px #FFD700;
+    }
+
+    canvas {
+      background: #111;
+      display: block;
+      margin: 60px auto 20px auto;
+      border: 2px solid #FFD700;
+    }
+
+    .stats {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+
+    .live {
+      font-size: 1.4em;
+      margin-top: 15px;
+      color: #FFD700;
+    }
   </style>
 </head>
 <body>
+  <div class="branding">🏁 Night Owl Racing</div>
   <canvas id="gBall" width="600" height="600"></canvas>
 
   <div class="live">
@@ -46,7 +79,7 @@ HTML = """
     let candidateLat = null, latStart = 0;
 
     const threshold = 0.3;
-    const sustainTime = 250; // ms
+    const sustainTime = 250;
     const matchRange = 0.1;
 
     const ws = new WebSocket("wss://" + location.host + "/ws");
@@ -61,7 +94,7 @@ HTML = """
 
       const now = Date.now();
 
-      // --- Braking Max (xG > 0)
+      // Braking (xG > 0)
       if (xG > threshold) {
         if (candidateBrake === null || Math.abs(xG - candidateBrake) > matchRange) {
           candidateBrake = xG;
@@ -74,7 +107,7 @@ HTML = """
         candidateBrake = null;
       }
 
-      // --- Acceleration Max (xG < 0)
+      // Acceleration (xG < 0)
       if (xG < -threshold) {
         const accelG = Math.abs(xG);
         if (candidateAccel === null || Math.abs(accelG - candidateAccel) > matchRange) {
@@ -88,7 +121,7 @@ HTML = """
         candidateAccel = null;
       }
 
-      // --- Lateral Max (|yG|)
+      // Lateral
       const latG = Math.abs(yG);
       if (latG > threshold) {
         if (candidateLat === null || Math.abs(latG - candidateLat) > matchRange) {
@@ -115,12 +148,12 @@ HTML = """
 
       ctx.beginPath();
       ctx.arc(centerX, centerY, 200, 0, 2 * Math.PI);
-      ctx.strokeStyle = "#999";
+      ctx.strokeStyle = "#FFD700";
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(xBall, yBall, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";  // Red when braking (positive xG)
+      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";  // red = braking
       ctx.fill();
 
       requestAnimationFrame(draw);
