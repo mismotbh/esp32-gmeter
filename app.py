@@ -120,7 +120,7 @@ HTML = """
 
       ctx.beginPath();
       ctx.arc(xBall, yBall, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = (xG > 0.15) ? "red" : "lime";
+      ctx.fillStyle = (xG < -0.15) ? "red" : "lime";
       ctx.fill();
 
       requestAnimationFrame(draw);
